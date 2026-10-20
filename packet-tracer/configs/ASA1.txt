@@ -1,0 +1,100 @@
+! ==================================================================
+!  ASA1  -  Cisco ASA 5505  -  Perimeter firewall (inside / outside / DMZ)
+!  Secured Network Model for Mitigating Cybercrime
+!
+!  Open ASA1 > CLI and type these two lines by hand first:
+!      enable
+!      (at "Password:" just press Enter - the factory enable password is blank)
+!  Then paste everything below.
+! ==================================================================
+configure terminal
+hostname ASA1
+domain-name cyberlab.local
+enable password Cyber@2026
+!
+! ---------- Remove the factory DHCP server (it clashes with our addressing) ----------
+no dhcpd enable inside
+no dhcpd address 192.168.1.5-192.168.1.36 inside
+no dhcpd auto_config outside
+!
+! ---------- Security zones ----------
+interface Vlan1
+ nameif inside
+ security-level 100
+ ip address 172.16.0.2 255.255.255.252
+ no shutdown
+exit
+interface Vlan2
+ nameif outside
+ security-level 0
+ ip address 209.165.200.226 255.255.255.248
+ no shutdown
+exit
+! The ASA 5505 base licence only allows a third zone if it cannot start
+! connections into "inside", so "no forward" must come before "nameif".
+interface Vlan3
+ no forward interface Vlan1
+ nameif dmz
+ security-level 70
+ ip address 172.16.50.1 255.255.255.0
+ no shutdown
+exit
+!
+! ---------- Physical ports ----------
+interface Ethernet0/0
+ description To ISP router (outside)
+ switchport access vlan 2
+ no shutdown
+exit
+interface Ethernet0/1
+ description To R1 Fa0/1 (inside)
+ switchport access vlan 1
+ no shutdown
+exit
+interface Ethernet0/2
+ description To DMZ-Server (dmz)
+ switchport access vlan 3
+ no shutdown
+exit
+!
+! ---------- Routing ----------
+route outside 0.0.0.0 0.0.0.0 209.165.200.225
+route inside 192.168.0.0 255.255.248.0 172.16.0.1
+!
+! ---------- NAT: hide the department networks, publish only the web server ----------
+object network INSIDE-NET
+ subnet 192.168.0.0 255.255.248.0
+ nat (inside,outside) dynamic interface
+exit
+object network DMZ-SERVER
+ host 172.16.50.10
+ nat (dmz,outside) static 209.165.200.227
+exit
+!
+! ---------- Inbound policy: the Internet may only reach the public web server ----------
+access-list OUTSIDE-DMZ extended permit tcp any host 172.16.50.10 eq www
+access-list OUTSIDE-DMZ extended permit icmp any host 172.16.50.10
+access-group OUTSIDE-DMZ in interface outside
+!
+! ---------- Let ping replies back in (stateful ICMP inspection) ----------
+class-map inspection_default
+ match default-inspection-traffic
+exit
+policy-map global_policy
+ class inspection_default
+  inspect icmp
+ exit
+exit
+service-policy global_policy global
+!
+! ---------- Firewall management: SSH from the Management VLAN only ----------
+username admin password Admin@2026
+aaa authentication ssh console LOCAL
+ssh 192.168.1.0 255.255.255.0 inside
+ssh timeout 10
+end
+write memory
+!
+! Optional, type by hand afterwards (it may ask "Do you really want to replace them?" - answer yes):
+!   configure terminal
+!   crypto key generate rsa modulus 1024

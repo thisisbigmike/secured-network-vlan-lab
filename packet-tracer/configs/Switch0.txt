@@ -1,0 +1,140 @@
+! ==================================================================
+!  Switch0  -  Cisco 2960-24TT  -  Core switch with five department VLANs
+!  Secured Network Model for Mitigating Cybercrime
+!
+!  Open Switch0 > CLI, press Enter, then paste everything below.
+!  VLAN 1 keeps the name "default" because IOS does not allow it to be renamed.
+! ==================================================================
+enable
+configure terminal
+hostname Switch0
+no ip domain-lookup
+ip domain-name cyberlab.local
+service password-encryption
+enable secret Cyber@2026
+username admin privilege 15 secret Admin@2026
+banner motd # Authorised access only. All activity is monitored and logged. #
+!
+! ---------- VLAN database ----------
+vlan 2
+ name ADMINISTRATIVE
+vlan 3
+ name MAINTENANCE
+vlan 4
+ name ACCOUNT
+vlan 5
+ name WORKS
+vlan 999
+ name BLACKHOLE
+exit
+!
+! ---------- Department access ports (one hub per department) ----------
+! Port security keeps the MAC addresses of the devices already on each hub
+! and drops frames from anything new (for example a rogue laptop).
+interface FastEthernet0/1
+ description Hub0 - VLAN 1 Management Department
+ switchport mode access
+ switchport access vlan 1
+ switchport port-security
+ switchport port-security maximum 4
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+exit
+interface FastEthernet0/2
+ description Hub1 - VLAN 2 Administrative Department
+ switchport mode access
+ switchport access vlan 2
+ switchport port-security
+ switchport port-security maximum 4
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+exit
+interface FastEthernet0/3
+ description Hub4 - VLAN 3 Maintenance Department
+ switchport mode access
+ switchport access vlan 3
+ switchport port-security
+ switchport port-security maximum 3
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+exit
+interface FastEthernet0/4
+ description Hub2 - VLAN 4 Account Department
+ switchport mode access
+ switchport access vlan 4
+ switchport port-security
+ switchport port-security maximum 4
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+exit
+interface FastEthernet0/5
+ description Hub3 - VLAN 5 Works Department
+ switchport mode access
+ switchport access vlan 5
+ switchport port-security
+ switchport port-security maximum 4
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+exit
+!
+! ---------- 802.1Q trunk to R1 ----------
+interface FastEthernet0/24
+ description Trunk to R1 Fa0/0 (router-on-a-stick)
+ switchport mode trunk
+ switchport trunk allowed vlan 1-5
+ switchport nonegotiate
+ no shutdown
+exit
+!
+! ---------- Unused ports: parked in a dead VLAN and shut down ----------
+interface range FastEthernet0/6 - 23
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+interface range GigabitEthernet0/1 - 2
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+exit
+!
+! ---------- Switch management address (Management VLAN only) ----------
+interface Vlan1
+ description Switch management
+ ip address 192.168.1.2 255.255.255.0
+ no shutdown
+exit
+ip default-gateway 192.168.1.1
+!
+line console 0
+ password Console@2026
+ login
+ exec-timeout 5 0
+ logging synchronous
+exit
+line vty 0 15
+ login local
+ transport input ssh
+ exec-timeout 5 0
+exit
+! The next command asks for the key size; the line after it answers 1024.
+crypto key generate rsa
+1024
+ip ssh version 2
+end
+write memory

@@ -1,0 +1,33 @@
+From device,From port,To device,To port,Cable,Note
+R1,FastEthernet0/0,Switch0,FastEthernet0/24,Copper Straight-Through,802.1Q trunk
+R1,FastEthernet0/1,ASA1,Ethernet0/1,Copper Straight-Through,172.16.0.0/30
+ASA1,Ethernet0/0,ISP,FastEthernet0/0,Copper Straight-Through,209.165.200.224/29
+ASA1,Ethernet0/2,DMZ-Server,FastEthernet0,Copper Straight-Through,
+ISP,FastEthernet0/1,ISP-Switch,FastEthernet0/1,Copper Straight-Through,
+ISP-Switch,FastEthernet0/2,Internet-Server,FastEthernet0,Copper Straight-Through,
+ISP-Switch,FastEthernet0/3,Attacker-PC,FastEthernet0,Copper Straight-Through,
+Switch0,FastEthernet0/1,Hub0,Port 0,Copper Cross-Over,
+Switch0,FastEthernet0/2,Hub1,Port 0,Copper Cross-Over,
+Switch0,FastEthernet0/3,Hub4,Port 0,Copper Cross-Over,
+Switch0,FastEthernet0/4,Hub2,Port 0,Copper Cross-Over,
+Switch0,FastEthernet0/5,Hub3,Port 0,Copper Cross-Over,
+Hub0,Port 1,PC10,FastEthernet0,Copper Straight-Through,
+Hub0,Port 2,PC11,FastEthernet0,Copper Straight-Through,
+Hub0,Port 3,PC12,FastEthernet0,Copper Straight-Through,
+Hub0,Port 4,Printer0,FastEthernet0,Copper Straight-Through,
+Hub1,Port 1,PC13,FastEthernet0,Copper Straight-Through,
+Hub1,Port 2,PC14,FastEthernet0,Copper Straight-Through,
+Hub1,Port 3,PC15,FastEthernet0,Copper Straight-Through,
+Hub1,Port 4,Printer1,FastEthernet0,Copper Straight-Through,
+Hub4,Port 1,PC16,FastEthernet0,Copper Straight-Through,
+Hub4,Port 2,PC24,FastEthernet0,Copper Straight-Through,
+Hub4,Port 3,Printer2,FastEthernet0,Copper Straight-Through,
+Hub2,Port 1,PC18,FastEthernet0,Copper Straight-Through,
+Hub2,Port 2,PC19,FastEthernet0,Copper Straight-Through,
+Hub2,Port 3,PC20,FastEthernet0,Copper Straight-Through,
+Hub2,Port 4,Printer3,FastEthernet0,Copper Straight-Through,
+Hub2,Port 5,Rogue-Laptop,FastEthernet0,Copper Straight-Through,only for the rogue-device test
+Hub3,Port 1,PC21,FastEthernet0,Copper Straight-Through,
+Hub3,Port 2,PC22,FastEthernet0,Copper Straight-Through,
+Hub3,Port 3,PC23,FastEthernet0,Copper Straight-Through,
+Hub3,Port 4,Printer4,FastEthernet0,Copper Straight-Through,

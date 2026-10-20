@@ -1,0 +1,165 @@
+! ==================================================================
+!  R1  -  Cisco 1841  -  Inter-VLAN router (router-on-a-stick)
+!  Secured Network Model for Mitigating Cybercrime
+!
+!  Before pasting: open R1 > CLI, answer "no" to the initial
+!  configuration dialog, press Enter, then paste everything below.
+! ==================================================================
+enable
+configure terminal
+hostname R1
+no ip domain-lookup
+ip domain-name cyberlab.local
+service password-encryption
+security passwords min-length 8
+enable secret Cyber@2026
+username admin privilege 15 secret Admin@2026
+banner motd # Authorised access only. All activity is monitored and logged. #
+login block-for 120 attempts 3 within 60
+!
+! ---------- Trunk to Switch0: one sub-interface per department VLAN ----------
+interface FastEthernet0/0
+ description Trunk to Switch0 Fa0/24
+ no ip address
+ no shutdown
+exit
+interface FastEthernet0/0.1
+ description VLAN 1 - Management Department
+ encapsulation dot1Q 1 native
+ ip address 192.168.1.1 255.255.255.0
+exit
+interface FastEthernet0/0.2
+ description VLAN 2 - Administrative Department
+ encapsulation dot1Q 2
+ ip address 192.168.2.1 255.255.255.0
+exit
+interface FastEthernet0/0.3
+ description VLAN 3 - Maintenance Department
+ encapsulation dot1Q 3
+ ip address 192.168.3.1 255.255.255.0
+exit
+interface FastEthernet0/0.4
+ description VLAN 4 - Account Department
+ encapsulation dot1Q 4
+ ip address 192.168.4.1 255.255.255.0
+exit
+interface FastEthernet0/0.5
+ description VLAN 5 - Works Department
+ encapsulation dot1Q 5
+ ip address 192.168.5.1 255.255.255.0
+exit
+!
+! ---------- Link to the ASA firewall (inside) ----------
+interface FastEthernet0/1
+ description Inside link to ASA1 Ethernet0/1
+ ip address 172.16.0.1 255.255.255.252
+ no shutdown
+exit
+ip route 0.0.0.0 0.0.0.0 172.16.0.2
+!
+! ---------- Extended ACLs: who may talk to whom ----------
+! Management (VLAN 1) has no inbound ACL: administrators can reach every department.
+! Administrative, Maintenance and Works may talk to each other and the Internet,
+! but may not open connections to Management or Account.
+! Account may only be reached by Management.
+! Every department may use the company web server in the DMZ for web (80) and DNS (53) only.
+!
+ip access-list extended VLAN2-ADMIN-IN
+ remark Replies to sessions opened by the Management VLAN
+ permit icmp 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.255 echo-reply
+ permit tcp 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.255 established
+ remark Protect the Management and Account VLANs
+ deny ip 192.168.2.0 0.0.0.255 192.168.1.0 0.0.0.255
+ deny ip 192.168.2.0 0.0.0.255 192.168.4.0 0.0.0.255
+ remark Company server in the DMZ - web and DNS only
+ permit tcp 192.168.2.0 0.0.0.255 host 172.16.50.10 eq 80
+ permit udp 192.168.2.0 0.0.0.255 host 172.16.50.10 eq 53
+ remark Block the firewall link and all other DMZ services
+ deny ip 192.168.2.0 0.0.0.255 172.16.0.0 0.0.255.255
+ remark Other operational departments and the Internet
+ permit ip 192.168.2.0 0.0.0.255 any
+exit
+!
+ip access-list extended VLAN3-MAINT-IN
+ remark Replies to sessions opened by the Management VLAN
+ permit icmp 192.168.3.0 0.0.0.255 192.168.1.0 0.0.0.255 echo-reply
+ permit tcp 192.168.3.0 0.0.0.255 192.168.1.0 0.0.0.255 established
+ remark Protect the Management and Account VLANs
+ deny ip 192.168.3.0 0.0.0.255 192.168.1.0 0.0.0.255
+ deny ip 192.168.3.0 0.0.0.255 192.168.4.0 0.0.0.255
+ remark Company server in the DMZ - web and DNS only
+ permit tcp 192.168.3.0 0.0.0.255 host 172.16.50.10 eq 80
+ permit udp 192.168.3.0 0.0.0.255 host 172.16.50.10 eq 53
+ remark Block the firewall link and all other DMZ services
+ deny ip 192.168.3.0 0.0.0.255 172.16.0.0 0.0.255.255
+ remark Other operational departments and the Internet
+ permit ip 192.168.3.0 0.0.0.255 any
+exit
+!
+ip access-list extended VLAN4-ACCOUNT-IN
+ remark Replies to sessions opened by the Management VLAN
+ permit icmp 192.168.4.0 0.0.0.255 192.168.1.0 0.0.0.255 echo-reply
+ permit tcp 192.168.4.0 0.0.0.255 192.168.1.0 0.0.0.255 established
+ remark Account staff may ping their own gateway
+ permit icmp 192.168.4.0 0.0.0.255 host 192.168.4.1
+ remark Account is isolated from every other department
+ deny ip 192.168.4.0 0.0.0.255 192.168.0.0 0.0.255.255
+ remark Company server in the DMZ - web and DNS only
+ permit tcp 192.168.4.0 0.0.0.255 host 172.16.50.10 eq 80
+ permit udp 192.168.4.0 0.0.0.255 host 172.16.50.10 eq 53
+ remark Block the firewall link and all other DMZ services
+ deny ip 192.168.4.0 0.0.0.255 172.16.0.0 0.0.255.255
+ remark Internet access
+ permit ip 192.168.4.0 0.0.0.255 any
+exit
+!
+ip access-list extended VLAN5-WORKS-IN
+ remark Replies to sessions opened by the Management VLAN
+ permit icmp 192.168.5.0 0.0.0.255 192.168.1.0 0.0.0.255 echo-reply
+ permit tcp 192.168.5.0 0.0.0.255 192.168.1.0 0.0.0.255 established
+ remark Protect the Management and Account VLANs
+ deny ip 192.168.5.0 0.0.0.255 192.168.1.0 0.0.0.255
+ deny ip 192.168.5.0 0.0.0.255 192.168.4.0 0.0.0.255
+ remark Company server in the DMZ - web and DNS only
+ permit tcp 192.168.5.0 0.0.0.255 host 172.16.50.10 eq 80
+ permit udp 192.168.5.0 0.0.0.255 host 172.16.50.10 eq 53
+ remark Block the firewall link and all other DMZ services
+ deny ip 192.168.5.0 0.0.0.255 172.16.0.0 0.0.255.255
+ remark Other operational departments and the Internet
+ permit ip 192.168.5.0 0.0.0.255 any
+exit
+!
+interface FastEthernet0/0.2
+ ip access-group VLAN2-ADMIN-IN in
+exit
+interface FastEthernet0/0.3
+ ip access-group VLAN3-MAINT-IN in
+exit
+interface FastEthernet0/0.4
+ ip access-group VLAN4-ACCOUNT-IN in
+exit
+interface FastEthernet0/0.5
+ ip access-group VLAN5-WORKS-IN in
+exit
+!
+! ---------- Device hardening: only the Management VLAN may log in ----------
+access-list 10 remark Router management is allowed from the Management VLAN only
+access-list 10 permit 192.168.1.0 0.0.0.255
+line console 0
+ password Console@2026
+ login
+ exec-timeout 5 0
+ logging synchronous
+exit
+line vty 0 4
+ access-class 10 in
+ login local
+ transport input ssh
+ exec-timeout 5 0
+exit
+! The next command asks for the key size; the line after it answers 1024.
+crypto key generate rsa
+1024
+ip ssh version 2
+end
+write memory

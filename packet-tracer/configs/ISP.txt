@@ -1,0 +1,27 @@
+! ==================================================================
+!  ISP  -  Cisco 1841  -  Simulated Internet service provider
+!  Secured Network Model for Mitigating Cybercrime
+!
+!  Open ISP > CLI, answer "no" to the initial configuration dialog,
+!  press Enter, then paste everything below.
+!  The ISP has no routes to 192.168.x.x: private addresses are not
+!  reachable from the Internet, only the ASA's public addresses are.
+! ==================================================================
+enable
+configure terminal
+hostname ISP
+no ip domain-lookup
+enable secret Cyber@2026
+!
+interface FastEthernet0/0
+ description Link to ASA1 outside (Ethernet0/0)
+ ip address 209.165.200.225 255.255.255.248
+ no shutdown
+exit
+interface FastEthernet0/1
+ description Public Internet LAN (Internet-Server, Attacker-PC)
+ ip address 209.165.201.1 255.255.255.224
+ no shutdown
+exit
+end
+write memory

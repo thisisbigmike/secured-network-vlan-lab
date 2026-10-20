@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SecureNet VLAN Lab</title>
+  <meta name="description" content="Simulation of a secured network model for mitigating cybercrime: five department VLANs, router-on-a-stick with extended ACLs, port security and an ASA firewall, driven by the same configs used in Cisco Packet Tracer.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 28 7v8c0 7-5 12.6-12 15C9 27.6 4 22 4 15V7l12-5Z' fill='%231f5eff'/%3E%3Cpath d='m10.5 16 4 4 7-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 28 7v8c0 7-5 12.6-12 15C9 27.6 4 22 4 15V7l12-5Z" fill="currentColor"/><path d="m10.5 16 4 4 7-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>
+        <h1>SecureNet VLAN Lab</h1>
+        <p>Secured network model for mitigating cybercrime · VLAN simulation of the Packet Tracer design</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="sim" aria-selected="true">Simulator</button>
+      <button role="tab" data-tab="matrix" aria-selected="false">Policy matrix</button>
+      <button role="tab" data-tab="scenarios" aria-selected="false">Attack scenarios</button>
+      <button role="tab" data-tab="build" aria-selected="false">Packet Tracer build kit</button>
+    </nav>
+    <button class="icon-btn" id="themeToggle" type="button" aria-label="Switch between light and dark mode" title="Light / dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <!-- ======================= SIMULATOR ======================= -->
+    <section class="tab-panel active" id="tab-sim" role="tabpanel">
+      <div class="sim-grid">
+        <div class="card topo-card">
+          <div class="card-head">
+            <h2>Network topology</h2>
+            <span class="hint">Click any device to open its console</span>
+            <span class="spacer"></span>
+            <div class="legend" aria-hidden="true">
+              <span><i></i>straight-through</span>
+              <span><i class="cross"></i>cross-over</span>
+              <span><i class="trunk"></i>802.1Q trunk</span>
+            </div>
+          </div>
+          <div class="topo-wrap">
+            <svg id="topo" role="img" aria-label="Topology: R1 router, Switch0 with five department VLANs on hubs, ASA1 firewall with DMZ and Internet"></svg>
+            <div class="tooltip" id="tooltip" hidden></div>
+          </div>
+          <div class="controls" id="controls"></div>
+        </div>
+
+        <div class="card console-card" id="console"></div>
+
+        <div class="card events-card">
+          <div class="card-head">
+            <h2>Packet walk</h2>
+            <span class="hint">Every hop, rule and translation for the last packet</span>
+            <span class="spacer"></span>
+            <button class="btn small" id="replay" type="button" disabled>Replay animation</button>
+          </div>
+          <div id="resultBanner"></div>
+          <ol class="events" id="events"></ol>
+          <p class="empty" id="eventsEmpty">Run a command (try <code>ping 192.168.4.18</code> from PC13) to see how the packet travels and which rule decides its fate.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= MATRIX ======================= -->
+    <section class="tab-panel" id="tab-matrix" role="tabpanel">
+      <div class="intro">
+        <div>
+          <h2>Who can reach whom</h2>
+          <p>Each cell is a live test through the configs: a ping between departments, a web request, or an SSH login. Click a cell for the exact rule that allowed or blocked it.</p>
+        </div>
+        <span class="spacer"></span>
+        <label class="toggle"><input type="checkbox" id="baselineToggle"> Compare with all security controls off</label>
+      </div>
+      <div class="card">
+        <div class="matrix-wrap" id="matrixTable"></div>
+        <div id="matrixDetail"></div>
+      </div>
+    </section>
+
+    <!-- ======================= SCENARIOS ======================= -->
+    <section class="tab-panel" id="tab-scenarios" role="tabpanel">
+      <div class="intro">
+        <div>
+          <h2>Cybercrime scenarios</h2>
+          <p>Each scenario is an attack described in the project report, run twice: once on the secured network and once with the security controls switched off. The difference is what the model mitigates.</p>
+        </div>
+      </div>
+      <div class="scen-grid" id="scenarioList"></div>
+    </section>
+
+    <!-- ======================= BUILD KIT ======================= -->
+    <section class="tab-panel" id="tab-build" role="tabpanel">
+      <div class="intro">
+        <div>
+          <h2>Build it in Cisco Packet Tracer</h2>
+          <p>Everything needed to rebuild this exact network in Packet Tracer 8.x: devices, cables, addresses, paste-ready configs and the tests to show. The simulator runs these same configs.</p>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn" type="button" id="printKit">Print build kit</button>
+      </div>
+      <div class="kit" id="kit"></div>
+    </section>
+  </main>
+
+  <footer>SecureNet VLAN Lab · runs offline · configs in <code>packet-tracer/configs</code></footer>
+
+  <script src="assets/topology.js"></script>
+  <script src="assets/configs.js"></script>
+  <script src="assets/engine.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
