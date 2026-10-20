@@ -9,7 +9,9 @@ It has two parts:
 
 ## Open the simulator
 
-Double-click **`index.html`**. It works offline and needs no install or internet connection.
+**Live:** https://thisisbigmike.github.io/secured-network-vlan-lab/
+
+Or double-click **`index.html`** in this folder. It works offline and needs no install or internet connection.
 
 | Tab | What it does |
 |---|---|
